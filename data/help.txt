@@ -1,0 +1,16 @@
+database of training images
+
+[IMAGES IN DISCORD]
+        MENA.txt
+	||
+    images_scraper=====>store all images & captions in dictionary with url/file_name & caption======>menabot posting
+	||
+    remove_duplicates
+	||
+[IMAGES IN FOLDER]
+	||
+    images_processor=====> store all images in dictionary with image_id/file_id, array, captions
+	||
+[PROCESSED ARRAY REPRESENTATIONS OF IMAGES]
+	||
+     training_data_set.npz/json/hdf
