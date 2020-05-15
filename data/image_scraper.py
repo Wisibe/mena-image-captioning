@@ -13,6 +13,8 @@ import numpy as np
 from PIL import Image
 import requests
 from io import BytesIO
+import time
+import os
 
 
 def is_user(string):
@@ -31,7 +33,7 @@ def get_user(string):
     return user
 
 def is_url(string):
-    if re.match(r'(?=(.*discordapp\.com.*))(?=.*\.png.*|.*\.jpg.*|.*\.jpeg.*)(?=(?!levelUp))', string, flags=re.I) == None:
+    if re.match(r'(?=(.*discordapp\.com.*))(?=.*\.png.*|.*\.jpg.*|.*\.jpeg.*)(?=(?!.*levelUp.*))(?=(?!.*levelup.*))(?=(?!.*avatars.*))(?=(?!.*profile.*))(?=(?!.*rank.*))', string, flags=re.I) == None:
         return False
     else:
         return True
@@ -42,7 +44,7 @@ def get_url(string):
     
     return m.group(1)
 
-f = open("blogspot.txt", "r", encoding="utf8")
+f = open("MENA.txt", "r", encoding="utf8")
 mena = f.readlines()
 f.close()
 
@@ -52,37 +54,45 @@ user = ''
 current_url = ''
 captions = []
 image_user = 'e'
-image_found = False
-caption_found = False
-for c in np.arange(0,len(mena)-3):
+attachment = False
+counter = 0
+current_path = 'D:/Repos/mena-image-captioning/data/train_images'
+for c in np.arange(1,len(mena)-3):
     if is_user(mena[c]):
         user = get_user(mena[c])
         continue
-    if (image_found) & (not caption_found) & (image_user == user) & (mena[c] != '\n'):
-        captions.append(mena[c] + '\n')
-        image_found = False
-        caption_found = True
-    if is_url(mena[c]):
+    if is_url(mena[c]) & (re.search(r'Attachments', mena[c-1]) != None):
         current_url = get_url(mena[c])
         if current_url not in seen:
-            seen.add(current_url)
-            # Make a dictionary
-            images.append(current_url + '\n')
-            image_found = True
-            image_user = user
-            if not is_user(mena[c-3]):
-                captions.append(mena[c-3] + '\n')
-                caption_found = True
+            if (not is_user(mena[c-3])) & (mena[c-3] != '\n') & np.all(np.array([ord(ch) for ch in mena[c-3]]) < 255):
+                seen.add(current_url)
+                # Make a dictionary
+                images.append(current_url + '\n')
+                r = requests.get(current_url)
+                name_of_file = '%id.jpg' % (counter)
+                
+                completeName = os.path.join(current_path, name_of_file)
+                with open(completeName, 'wb') as outfile:
+                    outfile.write(r.content)
+                time.sleep(1)
+                counter += 1
+                image_user = user
+                caption = {}
+                caption['caption'] = mena[c-3] + '\n'
+                caption['image_path'] = completeName
+                captions.append(caption)
+                
             else:
-                caption_found = False
+                pass
     else:
         pass
     
-f = open("blogspot_images.txt","w", encoding="utf8")
+f = open("mena_images.txt","w", encoding="utf8")
 f.writelines(images)
 f.close()
 
-f = open("blogspot_captions.txt","w", encoding="utf8")
+f = open("mena_captions.txt","w", encoding="utf8")
+captions = [caption.lower() for caption in captions]
 f.writelines(captions)
 f.close()
 
@@ -94,6 +104,3 @@ img = Image.open(BytesIO(response.content))
 
 
 url = np.random.choice(images)[:-1]
-r = requests.get(url)
-with open('random.jpg', 'wb') as outfile:
-    outfile.write(r.content)
